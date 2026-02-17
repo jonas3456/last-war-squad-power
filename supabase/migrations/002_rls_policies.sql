@@ -61,7 +61,7 @@ create policy "Leaders can delete alliance players"
     alliance_id = public.get_my_alliance_id()
   );
 
--- Power entries: leaders can read entries for their alliance's players
+-- Power entries: leaders can read, update, and delete entries for their alliance's players
 create policy "Leaders can view alliance power entries"
   on public.power_entries for select
   using (
@@ -71,5 +71,22 @@ create policy "Leaders can view alliance power entries"
     )
   );
 
--- Note: Power entry inserts/updates from /submit/[token] and player
--- self-registration use service role client which bypasses RLS.
+create policy "Leaders can update alliance power entries"
+  on public.power_entries for update
+  using (
+    player_id in (
+      select id from public.players
+      where alliance_id = public.get_my_alliance_id()
+    )
+  );
+
+create policy "Leaders can delete alliance power entries"
+  on public.power_entries for delete
+  using (
+    player_id in (
+      select id from public.players
+      where alliance_id = public.get_my_alliance_id()
+    )
+  );
+
+-- Note: Power entry inserts from /submit/[token] use service role client which bypasses RLS.

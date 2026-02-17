@@ -52,7 +52,7 @@ export default async function PlayerHistoryPage({
         </div>
       </div>
       <PowerChart entries={powerEntries} />
-      <HistoryTable entries={powerEntries} />
+      <HistoryTable entries={powerEntries} playerId={id} />
     </div>
   );
 }
