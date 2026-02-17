@@ -21,7 +21,10 @@ export async function addPlayer(formData: FormData) {
     token,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.code === "23505") return { error: "A player with this name already exists" };
+    return { error: error.message };
+  }
 
   revalidatePath("/dashboard/players");
   revalidatePath("/dashboard");

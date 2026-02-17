@@ -43,6 +43,7 @@ create table public.power_entries (
 -- Indexes
 create index idx_players_token on public.players(token);
 create index idx_players_alliance_id on public.players(alliance_id);
+create unique index idx_players_alliance_name on public.players(alliance_id, lower(name));
 create index idx_power_entries_player_id on public.power_entries(player_id);
 create index idx_power_entries_submitted_at on public.power_entries(submitted_at desc);
 
