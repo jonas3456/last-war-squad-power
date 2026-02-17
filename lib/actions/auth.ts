@@ -63,6 +63,7 @@ export async function signUp(formData: FormData) {
     user_id: authData.user.id,
     alliance_id: alliance.id,
     role: "boss",
+    username,
   });
 
   if (leaderError) {

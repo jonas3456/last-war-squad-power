@@ -4,16 +4,34 @@ alter table public.leaders enable row level security;
 alter table public.players enable row level security;
 alter table public.power_entries enable row level security;
 
--- Alliances: leaders can read their own alliance
+-- Alliances: leaders can read and update their own alliance
 create policy "Leaders can view own alliance"
   on public.alliances for select
   using (
     id = public.get_my_alliance_id()
   );
 
--- Leaders: can view all leaders in the same alliance
+create policy "Leaders can update own alliance"
+  on public.alliances for update
+  using (
+    id = public.get_my_alliance_id()
+  );
+
+-- Leaders: can view, update, and delete leaders in the same alliance
 create policy "Leaders can view alliance leaders"
   on public.leaders for select
+  using (
+    alliance_id = public.get_my_alliance_id()
+  );
+
+create policy "Leaders can update alliance leaders"
+  on public.leaders for update
+  using (
+    alliance_id = public.get_my_alliance_id()
+  );
+
+create policy "Leaders can delete alliance leaders"
+  on public.leaders for delete
   using (
     alliance_id = public.get_my_alliance_id()
   );

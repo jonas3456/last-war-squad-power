@@ -3,33 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { nanoid } from "nanoid";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-
-async function getAllianceId() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: leader } = await supabase
-    .from("leaders")
-    .select("alliance_id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!leader) throw new Error("No alliance found");
-  return { supabase, allianceId: leader.alliance_id };
-}
+import { getAuthContext } from "@/lib/queries/auth";
 
 export async function addPlayer(formData: FormData) {
   const name = formData.get("name") as string;
   if (!name?.trim()) return { error: "Player name is required" };
 
-  const { supabase, allianceId } = await getAllianceId();
+  const auth = await getAuthContext();
+  if (!auth) return { error: "Not authenticated" };
+
+  const supabase = await createClient();
   const token = nanoid(21);
 
   const { error } = await supabase.from("players").insert({
-    alliance_id: allianceId,
+    alliance_id: auth.allianceId,
     name: name.trim(),
     token,
   });
@@ -46,7 +33,10 @@ export async function updatePlayer(formData: FormData) {
   const name = formData.get("name") as string;
   if (!id || !name?.trim()) return { error: "Player ID and name are required" };
 
-  const { supabase } = await getAllianceId();
+  const auth = await getAuthContext();
+  if (!auth) return { error: "Not authenticated" };
+
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from("players")
@@ -63,7 +53,10 @@ export async function updatePlayer(formData: FormData) {
 export async function deletePlayer(id: string) {
   if (!id) return { error: "Player ID is required" };
 
-  const { supabase } = await getAllianceId();
+  const auth = await getAuthContext();
+  if (!auth) return { error: "Not authenticated" };
+
+  const supabase = await createClient();
 
   const { error } = await supabase.from("players").delete().eq("id", id);
 
@@ -77,7 +70,10 @@ export async function deletePlayer(id: string) {
 export async function regenerateToken(id: string) {
   if (!id) return { error: "Player ID is required" };
 
-  const { supabase } = await getAllianceId();
+  const auth = await getAuthContext();
+  if (!auth) return { error: "Not authenticated" };
+
+  const supabase = await createClient();
   const token = nanoid(21);
 
   const { error } = await supabase
@@ -92,14 +88,16 @@ export async function regenerateToken(id: string) {
 }
 
 export async function generatePlayerInviteLink() {
-  const { allianceId } = await getAllianceId();
-  const serviceClient = createServiceClient();
+  const auth = await getAuthContext();
+  if (!auth) return { error: "Not authenticated" };
+
+  const supabase = await createClient();
   const token = nanoid(21);
 
-  const { error } = await serviceClient
+  const { error } = await supabase
     .from("alliances")
     .update({ player_invite_token: token })
-    .eq("id", allianceId);
+    .eq("id", auth.allianceId);
 
   if (error) return { error: error.message };
 

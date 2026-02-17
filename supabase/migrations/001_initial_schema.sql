@@ -13,6 +13,7 @@ create table public.leaders (
   user_id uuid not null references auth.users(id) on delete cascade,
   alliance_id uuid not null references public.alliances(id) on delete cascade,
   role text not null default 'boss',
+  username text not null default 'unknown',
   created_at timestamptz not null default now(),
   unique(user_id, alliance_id)
 );

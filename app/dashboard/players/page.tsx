@@ -1,3 +1,4 @@
+import { getAuthContext } from "@/lib/queries/auth";
 import { getPlayersForAlliance } from "@/lib/queries/players";
 import { createClient } from "@/lib/supabase/server";
 import { PlayerTable } from "@/components/dashboard/player-table";
@@ -5,30 +6,21 @@ import { AddPlayerDialog } from "@/components/dashboard/add-player-dialog";
 import { PlayerInviteLink } from "@/components/dashboard/player-invite-link";
 
 export default async function PlayersPage() {
-  const players = await getPlayersForAlliance();
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [auth, players] = await Promise.all([
+    getAuthContext(),
+    getPlayersForAlliance(),
+  ]);
 
   let playerInviteToken: string | null = null;
-  if (user) {
-    const { data: leader } = await supabase
-      .from("leaders")
-      .select("alliance_id")
-      .eq("user_id", user.id)
+  if (auth) {
+    const supabase = await createClient();
+    const { data: alliance } = await supabase
+      .from("alliances")
+      .select("player_invite_token")
+      .eq("id", auth.allianceId)
       .single();
 
-    if (leader) {
-      const { data: alliance } = await supabase
-        .from("alliances")
-        .select("player_invite_token")
-        .eq("id", leader.alliance_id)
-        .single();
-
-      playerInviteToken = alliance?.player_invite_token ?? null;
-    }
+    playerInviteToken = alliance?.player_invite_token ?? null;
   }
 
   return (

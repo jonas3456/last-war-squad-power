@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getAuthContext } from "@/lib/queries/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PowerChart } from "@/components/dashboard/power-chart";
 import { HistoryTable } from "@/components/dashboard/history-table";
@@ -13,26 +14,16 @@ export default async function PlayerHistoryPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const auth = await getAuthContext();
+  if (!auth) notFound();
+
   const supabase = await createClient();
-
-  // Verify player belongs to leader's alliance
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) notFound();
-
-  const { data: leader } = await supabase
-    .from("leaders")
-    .select("alliance_id")
-    .eq("user_id", user.id)
-    .single();
-  if (!leader) notFound();
 
   const { data: player } = await supabase
     .from("players")
     .select("*")
     .eq("id", id)
-    .eq("alliance_id", leader.alliance_id)
+    .eq("alliance_id", auth.allianceId)
     .single();
 
   if (!player) notFound();

@@ -1,5 +1,8 @@
 -- View: latest power entry per player
-create or replace view public.player_latest_power as
+-- security_invoker ensures RLS of underlying tables applies to the querying user
+create or replace view public.player_latest_power
+  with (security_invoker = on)
+as
 select distinct on (p.id)
   p.id,
   p.alliance_id,

@@ -1,37 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAuthContext } from "@/lib/queries/auth";
 import type { PlayerWithLatestEntry } from "@/lib/types";
 
 export async function getDashboardData() {
+  const auth = await getAuthContext();
+  if (!auth) return { players: [] };
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { players: [], alliance: null };
-
-  const { data: leader } = await supabase
-    .from("leaders")
-    .select("alliance_id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!leader) return { players: [], alliance: null };
-
-  const { data: alliance } = await supabase
-    .from("alliances")
-    .select("*")
-    .eq("id", leader.alliance_id)
-    .single();
 
   const { data: players } = await supabase
     .from("player_latest_power")
     .select("*")
-    .eq("alliance_id", leader.alliance_id)
+    .eq("alliance_id", auth.allianceId)
     .order("name");
 
   return {
     players: (players as PlayerWithLatestEntry[]) ?? [],
-    alliance,
   };
 }
 

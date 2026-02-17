@@ -1,6 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/actions/auth";
+import { getAuthContext } from "@/lib/queries/auth";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
+import { ChangePasswordDialog } from "@/components/dashboard/change-password-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ChangePasswordDialog } from "@/components/dashboard/change-password-dialog";
 import { LogOut, Menu, Shield } from "lucide-react";
 
 export default async function DashboardLayout({
@@ -18,30 +18,8 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let allianceName = "My Alliance";
-  if (user) {
-    const { data: leader } = await supabase
-      .from("leaders")
-      .select("alliance_id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (leader) {
-      const { data: alliance } = await supabase
-        .from("alliances")
-        .select("name")
-        .eq("id", leader.alliance_id)
-        .single();
-
-      if (alliance) allianceName = alliance.name;
-    }
-  }
+  const auth = await getAuthContext();
+  const allianceName = auth?.allianceName ?? "My Alliance";
 
   return (
     <div className="flex min-h-screen">

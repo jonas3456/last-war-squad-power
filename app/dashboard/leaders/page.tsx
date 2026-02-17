@@ -1,13 +1,16 @@
-import { getLeadersForAlliance, getCurrentLeaderRole, getAllianceInviteToken } from "@/lib/queries/leaders";
+import { getAuthContext } from "@/lib/queries/auth";
+import { getLeadersForAlliance, getAllianceInviteToken } from "@/lib/queries/leaders";
 import { LeadersTable } from "@/components/dashboard/leaders-table";
 import { InviteLinkSection } from "@/components/dashboard/invite-helper-dialog";
 
 export default async function LeadersPage() {
-  const [leaders, currentRole, inviteToken] = await Promise.all([
+  const [auth, leaders, inviteToken] = await Promise.all([
+    getAuthContext(),
     getLeadersForAlliance(),
-    getCurrentLeaderRole(),
     getAllianceInviteToken(),
   ]);
+
+  const currentRole = auth?.role ?? "helper";
 
   return (
     <div className="space-y-6">
@@ -20,7 +23,7 @@ export default async function LeadersPage() {
       {currentRole === "boss" && (
         <InviteLinkSection inviteToken={inviteToken} />
       )}
-      <LeadersTable leaders={leaders} currentRole={currentRole ?? "helper"} />
+      <LeadersTable leaders={leaders} currentRole={currentRole} />
     </div>
   );
 }

@@ -3,35 +3,24 @@
 import { revalidatePath } from "next/cache";
 import { nanoid } from "nanoid";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { getAuthContext } from "@/lib/queries/auth";
 
 async function requireBoss() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: leader } = await supabase
-    .from("leaders")
-    .select("id, alliance_id, role")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!leader) throw new Error("No alliance found");
-  if (leader.role !== "boss") throw new Error("Only R5 can do this");
-
-  return { supabase, userId: user.id, leaderId: leader.id, allianceId: leader.alliance_id };
+  const auth = await getAuthContext();
+  if (!auth) throw new Error("Not authenticated");
+  if (auth.role !== "boss") throw new Error("Only R5 can do this");
+  return auth;
 }
 
 export async function generateInviteLink() {
-  const { allianceId } = await requireBoss();
-  const serviceClient = createServiceClient();
+  const auth = await requireBoss();
+  const supabase = await createClient();
   const token = nanoid(21);
 
-  const { error } = await serviceClient
+  const { error } = await supabase
     .from("alliances")
     .update({ invite_token: token })
-    .eq("id", allianceId);
+    .eq("id", auth.allianceId);
 
   if (error) return { error: error.message };
 
@@ -42,20 +31,20 @@ export async function generateInviteLink() {
 export async function removeHelper(leaderId: string) {
   if (!leaderId) return { error: "Leader ID is required" };
 
-  const { allianceId } = await requireBoss();
-  const serviceClient = createServiceClient();
+  const auth = await requireBoss();
+  const supabase = await createClient();
 
-  const { data: leader } = await serviceClient
+  const { data: leader } = await supabase
     .from("leaders")
     .select("id, role")
     .eq("id", leaderId)
-    .eq("alliance_id", allianceId)
+    .eq("alliance_id", auth.allianceId)
     .single();
 
   if (!leader) return { error: "Leader not found" };
   if (leader.role === "boss") return { error: "Cannot remove R5" };
 
-  const { error } = await serviceClient
+  const { error } = await supabase
     .from("leaders")
     .delete()
     .eq("id", leaderId);
@@ -69,32 +58,32 @@ export async function removeHelper(leaderId: string) {
 export async function transferR5(targetLeaderId: string) {
   if (!targetLeaderId) return { error: "Leader ID is required" };
 
-  const { leaderId, allianceId } = await requireBoss();
-  const serviceClient = createServiceClient();
+  const auth = await requireBoss();
+  const supabase = await createClient();
 
   // Verify target is an R4 in the same alliance
-  const { data: target } = await serviceClient
+  const { data: target } = await supabase
     .from("leaders")
     .select("id, role")
     .eq("id", targetLeaderId)
-    .eq("alliance_id", allianceId)
+    .eq("alliance_id", auth.allianceId)
     .single();
 
   if (!target) return { error: "Leader not found" };
   if (target.role === "boss") return { error: "Already R5" };
 
   // Swap: promote target to boss, demote self to helper
-  const { error: promoteError } = await serviceClient
+  const { error: promoteError } = await supabase
     .from("leaders")
     .update({ role: "boss" })
     .eq("id", targetLeaderId);
 
   if (promoteError) return { error: promoteError.message };
 
-  const { error: demoteError } = await serviceClient
+  const { error: demoteError } = await supabase
     .from("leaders")
     .update({ role: "helper" })
-    .eq("id", leaderId);
+    .eq("id", auth.leaderId);
 
   if (demoteError) return { error: demoteError.message };
 
@@ -105,20 +94,21 @@ export async function transferR5(targetLeaderId: string) {
 export async function resetLeaderPassword(targetLeaderId: string) {
   if (!targetLeaderId) return { error: "Leader ID is required" };
 
-  const { allianceId } = await requireBoss();
-  const serviceClient = createServiceClient();
+  const auth = await requireBoss();
+  const supabase = await createClient();
 
   // Verify target is in the same alliance
-  const { data: target } = await serviceClient
+  const { data: target } = await supabase
     .from("leaders")
     .select("id, user_id")
     .eq("id", targetLeaderId)
-    .eq("alliance_id", allianceId)
+    .eq("alliance_id", auth.allianceId)
     .single();
 
   if (!target) return { error: "Leader not found" };
 
-  // Generate a temporary password
+  // Generate a temporary password — requires admin API
+  const serviceClient = createServiceClient();
   const tempPassword = nanoid(12);
 
   const { error } = await serviceClient.auth.admin.updateUserById(

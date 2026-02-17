@@ -72,6 +72,7 @@ export async function joinAlliance(inviteToken: string, formData: FormData) {
     user_id: authData.user.id,
     alliance_id: alliance.id,
     role: "helper",
+    username,
   });
 
   if (leaderError) {
