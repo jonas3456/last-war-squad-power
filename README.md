@@ -2,7 +2,7 @@
 
 Track hero squad power levels for your Last War alliance. Leaders manage players and view dashboards; players submit data via tokenized invite links.
 
-**Live:** [lw.410404.xyz](https://lw.410404.xyz)
+**Live:** [lw.410404.xyz](https://lw.410404.xyz) &nbsp;|&nbsp; **[GitHub](https://github.com/jonas3456/last-war-squad-power)** &nbsp;|&nbsp; **[User Guide](https://github.com/jonas3456/last-war-squad-power/blob/main/USER_GUIDE.md)** &nbsp;|&nbsp; [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Features
 
@@ -115,3 +115,7 @@ components/
 supabase/
   migrations/          # SQL migration files (001-007)
 ```
+
+## License
+
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
