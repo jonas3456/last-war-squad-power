@@ -27,11 +27,17 @@ Last War Squad Power Tracker — a Next.js App Router application for tracking h
 - Service role client is only used where RLS cannot apply: signup/join (no leader row yet), unauthenticated submissions, unauthenticated player self-registration, admin password resets.
 
 ### Database
-- Migrations in `supabase/migrations/` (001–005). Run in order in Supabase SQL editor.
+- Migrations in `supabase/migrations/` (001–007). Run in order in Supabase SQL editor.
 - `get_my_alliance_id()` — `security definer` function that breaks circular RLS references on the leaders table.
 - `player_latest_power` view with `security_invoker = on` for dashboard data.
+- Supabase linter may flag the view as "Security Definer" — this is a false positive; `security_invoker = on` is already set.
 - `compute_total_power` trigger auto-calculates total_power on power_entries.
 - Columns use `numeric` type (not bigint) to support decimal values.
+- Unique constraint on `(alliance_id, lower(name))` prevents duplicate player names. Postgres error code `23505` = unique violation.
+
+### Charts (Recharts)
+- CSS variables in this project use `oklch()` not `hsl()` — never wrap them in `hsl(var(...))` in Recharts props, use `var(--color-*)` directly or hardcode hex colors.
+- Recharts `formatter` prop requires `(value: any)` cast to satisfy TypeScript.
 
 ### Roles
 - **R5** (boss): Full access — manage leaders, transfer R5, reset passwords, manage players
