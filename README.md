@@ -14,6 +14,8 @@ Track hero squad power levels for your Last War alliance. Leaders manage players
 - **History & charts** — track power trends over time per player
 - **Leader management** — invite co-leaders, transfer R5, reset passwords
 - **Edit/delete submissions** — leaders can correct or remove any entry
+- **Interactive chart** — click legend items to show/hide individual squad lines
+- **Unique player names** — duplicate names within an alliance are prevented
 - **Dark mode** — toggle between light and dark themes
 - **German locale** — supports comma as decimal separator (e.g. 32,12)
 - **Mobile-friendly** — responsive sidebar with sheet navigation on mobile
@@ -55,6 +57,7 @@ For existing installations, also run these additional migrations:
 1. `supabase/migrations/004_leaders_username.sql` — Username denormalization
 2. `supabase/migrations/005_alliance_leader_policies.sql` — Alliance/leader update policies
 3. `supabase/migrations/006_power_entries_update_delete.sql` — Entry edit/delete policies
+4. `supabase/migrations/007_unique_player_name.sql` — Unique player names per alliance (remove duplicates first)
 
 ### 4. Configure Supabase Auth
 
@@ -110,5 +113,5 @@ components/
   register/            # Player self-registration form
   ui/                  # shadcn/ui primitives
 supabase/
-  migrations/          # SQL migration files (001-006)
+  migrations/          # SQL migration files (001-007)
 ```

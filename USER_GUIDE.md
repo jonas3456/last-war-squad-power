@@ -53,6 +53,8 @@ Navigate to **Players** in the sidebar.
 3. Click **Add Player**
 4. The player appears in the table with a unique submission link
 
+Player names must be unique within an alliance (case-insensitive). An error is shown if the name is already taken.
+
 ### Player Self-Registration
 
 Instead of adding players one by one, you can share a registration link:
@@ -112,6 +114,7 @@ Leaders can edit or delete any submission regardless of age.
 
 1. From the **Dashboard**, click the **clock icon** next to a player
 2. The history page shows a **chart** of power trends and a **table** of all submissions
+3. Click any item in the **chart legend** to show or hide that squad's line
 
 ### Editing a Submission
 
