@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { useTheme } from "next-themes";
 import { signUp } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,13 +17,27 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 
+const SITEKEY = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY;
+
 export function SignupForm() {
+  const { resolvedTheme } = useTheme();
+  const captchaRef = useRef<HCaptcha>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
   const [state, formAction, pending] = useActionState(
     async (_prev: { error?: string } | undefined, formData: FormData) => {
-      return await signUp(formData);
+      const result = await signUp(formData);
+      if (result?.error) {
+        captchaRef.current?.resetCaptcha();
+        setCaptchaToken(null);
+      }
+      return result;
     },
     undefined
   );
+
+  const captchaRequired = !!SITEKEY;
+  const canSubmit = !captchaRequired || !!captchaToken;
 
   return (
     <Card className="w-full max-w-md">
@@ -67,9 +83,21 @@ export function SignupForm() {
               required
             />
           </div>
+          {SITEKEY && (
+            <>
+              <HCaptcha
+                ref={captchaRef}
+                sitekey={SITEKEY}
+                theme={resolvedTheme === "dark" ? "dark" : "light"}
+                onVerify={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken(null)}
+              />
+              <input type="hidden" name="captchaToken" value={captchaToken ?? ""} />
+            </>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button type="submit" className="w-full" disabled={pending || !canSubmit}>
             {pending ? "Creating alliance..." : "Create Alliance"}
           </Button>
           <p className="text-sm text-muted-foreground">

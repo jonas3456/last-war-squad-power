@@ -49,8 +49,15 @@ Last War Squad Power Tracker — a Next.js App Router application for tracking h
 - `parsePower()` in `lib/actions/submissions.ts` handles both comma and dot
 - `formatPower()` in `lib/utils.ts` uses `Intl.NumberFormat("de-DE")`
 
+### hCaptcha
+- Opt-in: only active when `NEXT_PUBLIC_HCAPTCHA_SITEKEY` is set — widget is not rendered otherwise.
+- Token generated client-side, injected as a hidden `captchaToken` form field, read in server actions and forwarded to Supabase Auth.
+- Use `useTheme()` from `next-themes` to pass `theme="dark"|"light"` to the `<HCaptcha>` component.
+- Must also enable hCaptcha in Supabase Dashboard → Authentication → Settings with the secret key.
+
 ## Deployment
 
 - Hosted on Vercel, database on Supabase
+- `git push` to `main` triggers a production deployment — always ask the user before pushing
 - Supabase Auth setting: "Confirm email" must be disabled (uses fake @internal.local emails)
 - Environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`

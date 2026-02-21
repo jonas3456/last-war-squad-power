@@ -14,6 +14,7 @@ export async function signUp(formData: FormData) {
   const username = (formData.get("username") as string)?.trim();
   const password = formData.get("password") as string;
   const allianceName = (formData.get("allianceName") as string)?.trim();
+  const captchaToken = (formData.get("captchaToken") as string) || undefined;
 
   if (!username || !password || !allianceName) {
     return { error: "All fields are required" };
@@ -33,6 +34,7 @@ export async function signUp(formData: FormData) {
     password,
     options: {
       data: { username },
+      captchaToken,
     },
   });
 
@@ -76,6 +78,7 @@ export async function signUp(formData: FormData) {
 export async function signIn(formData: FormData) {
   const username = (formData.get("username") as string)?.trim();
   const password = formData.get("password") as string;
+  const captchaToken = (formData.get("captchaToken") as string) || undefined;
 
   if (!username || !password) {
     return { error: "Username and password are required" };
@@ -87,6 +90,7 @@ export async function signIn(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
+    options: { captchaToken },
   });
 
   if (error) {

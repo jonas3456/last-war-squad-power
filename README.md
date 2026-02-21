@@ -16,6 +16,7 @@ Track hero squad power levels for your Last War alliance. Leaders manage players
 - **Edit/delete submissions** — leaders can correct or remove any entry
 - **Interactive chart** — click legend items to show/hide individual squad lines
 - **Unique player names** — duplicate names within an alliance are prevented
+- **hCaptcha** — optional bot protection on login/signup (set `NEXT_PUBLIC_HCAPTCHA_SITEKEY`)
 - **Dark mode** — toggle between light and dark themes
 - **German locale** — supports comma as decimal separator (e.g. 32,12)
 - **Mobile-friendly** — responsive sidebar with sheet navigation on mobile
@@ -42,7 +43,12 @@ Create `.env.local` with your Supabase credentials:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Optional: enable hCaptcha bot protection
+NEXT_PUBLIC_HCAPTCHA_SITEKEY=your-hcaptcha-site-key
 ```
+
+To enable hCaptcha: add the site key above, then in Supabase Dashboard → Authentication → Settings → enable **hCaptcha** and enter your secret key.
 
 ### 3. Run database migrations
 
