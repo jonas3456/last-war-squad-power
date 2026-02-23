@@ -55,6 +55,37 @@ export async function leaderUpdateEntry(
   return { success: true };
 }
 
+export async function leaderAddEntry(playerId: string, formData: FormData) {
+  const auth = await getAuthContext();
+  if (!auth) return { error: "Not authenticated" };
+
+  const squad1 = parsePower(formData.get("squad1") as string);
+  const squad2 = parsePower(formData.get("squad2") as string);
+  const squad3 = parsePower(formData.get("squad3") as string);
+  const squad4 = parsePower(formData.get("squad4") as string) ?? 0;
+
+  if (squad1 === null || squad2 === null || squad3 === null) {
+    return { error: "Squads 1-3 are required and must be valid numbers" };
+  }
+
+  if (squad1 < 0 || squad2 < 0 || squad3 < 0 || squad4 < 0) {
+    return { error: "Power values must be non-negative" };
+  }
+
+  const submittedAt = (formData.get("submittedAt") as string)?.trim();
+  const insertData: Record<string, unknown> = { player_id: playerId, squad1, squad2, squad3, squad4 };
+  if (submittedAt) insertData.submitted_at = submittedAt;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("power_entries").insert(insertData);
+
+  if (error) return { error: "Failed to add entry" };
+
+  revalidatePath(`/dashboard/players/${playerId}/history`);
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
 export async function leaderDeleteEntry(playerId: string, entryId: string) {
   const auth = await getAuthContext();
   if (!auth) return { error: "Not authenticated" };

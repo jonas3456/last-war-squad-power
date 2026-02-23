@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import type { PowerEntry } from "@/lib/types";
 import { formatPower } from "@/lib/utils";
-import { leaderUpdateEntry, leaderDeleteEntry } from "@/lib/actions/entries";
+import { leaderUpdateEntry, leaderDeleteEntry, leaderAddEntry } from "@/lib/actions/entries";
 import {
   Table,
   TableBody,
@@ -23,7 +23,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+
+function PctChange({ current, previous }: { current: number; previous: number | undefined }) {
+  if (previous === undefined || previous === 0) return null;
+  const pct = ((current - previous) / previous) * 100;
+  if (pct === 0) return null;
+  const sign = pct > 0 ? "+" : "";
+  return (
+    <span className={`block text-xs ${pct > 0 ? "text-green-500" : "text-destructive"}`}>
+      {sign}{pct.toFixed(1)}%
+    </span>
+  );
+}
 
 export function HistoryTable({
   entries,
@@ -34,15 +46,29 @@ export function HistoryTable({
 }) {
   const [editEntry, setEditEntry] = useState<PowerEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<PowerEntry | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [addDatetime, setAddDatetime] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  if (entries.length === 0) {
-    return (
-      <div className="flex h-32 items-center justify-center rounded-lg border border-dashed">
-        <p className="text-muted-foreground">No entries yet</p>
-      </div>
-    );
+  function openAddDialog() {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    setAddDatetime(local.toISOString().slice(0, 16));
+    setError(null);
+    setShowAddDialog(true);
+  }
+
+  function handleAdd(formData: FormData) {
+    setError(null);
+    startTransition(async () => {
+      const result = await leaderAddEntry(playerId, formData);
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        setShowAddDialog(false);
+      }
+    });
   }
 
   function handleEdit(formData: FormData) {
@@ -73,6 +99,22 @@ export function HistoryTable({
 
   return (
     <>
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={openAddDialog}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Entry
+        </Button>
+      </div>
+
+      {entries.length === 0 ? (
+        <div className="flex h-32 items-center justify-center rounded-lg border border-dashed">
+          <p className="text-muted-foreground">No entries yet</p>
+        </div>
+      ) : (
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -87,7 +129,9 @@ export function HistoryTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries.map((entry) => (
+            {entries.map((entry, i) => {
+              const prev = entries[i + 1];
+              return (
               <TableRow key={entry.id}>
                 <TableCell>
                   {new Date(entry.submitted_at).toLocaleString("de-DE", {
@@ -100,18 +144,23 @@ export function HistoryTable({
                 </TableCell>
                 <TableCell className="text-right">
                   {formatPower(entry.squad1)}
+                  <PctChange current={entry.squad1} previous={prev?.squad1} />
                 </TableCell>
                 <TableCell className="text-right">
                   {formatPower(entry.squad2)}
+                  <PctChange current={entry.squad2} previous={prev?.squad2} />
                 </TableCell>
                 <TableCell className="text-right">
                   {formatPower(entry.squad3)}
+                  <PctChange current={entry.squad3} previous={prev?.squad3} />
                 </TableCell>
                 <TableCell className="text-right">
                   {formatPower(entry.squad4)}
+                  <PctChange current={entry.squad4} previous={prev?.squad4} />
                 </TableCell>
                 <TableCell className="text-right font-semibold">
                   {formatPower(entry.total_power)}
+                  <PctChange current={entry.total_power} previous={prev?.total_power} />
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
@@ -140,10 +189,71 @@ export function HistoryTable({
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </div>
+      )}
+
+      {/* Add dialog */}
+      <Dialog
+        open={showAddDialog}
+        onOpenChange={(open) => {
+          setShowAddDialog(open);
+          setError(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Entry</DialogTitle>
+            <DialogDescription>
+              Manually add a power entry for this player.
+            </DialogDescription>
+          </DialogHeader>
+          <form action={handleAdd}>
+            <div className="space-y-4 py-4">
+              {error && (
+                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="add-submittedAt">Date &amp; Time</Label>
+                <input
+                  id="add-submittedAt"
+                  name="submittedAt"
+                  type="datetime-local"
+                  defaultValue={addDatetime}
+                  key={addDatetime}
+                  required
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+              {[1, 2, 3, 4].map((num) => (
+                <div key={num} className="space-y-2">
+                  <Label htmlFor={`add-squad${num}`}>
+                    Squad {num}
+                    {num === 4 ? " (optional)" : ""}
+                  </Label>
+                  <Input
+                    id={`add-squad${num}`}
+                    name={`squad${num}`}
+                    type="text"
+                    inputMode="numeric"
+                    required={num !== 4}
+                  />
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Saving..." : "Add Entry"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit dialog */}
       <Dialog

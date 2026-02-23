@@ -21,6 +21,10 @@ Last War Squad Power Tracker — a Next.js App Router application for tracking h
 
 ## Architecture
 
+### Entry Management
+- `lib/actions/entries.ts` — `leaderUpdateEntry` / `leaderDeleteEntry` server actions for the history page
+- `parsePower()` is duplicated in `entries.ts` (not only in `submissions.ts`) — consider consolidating into `lib/utils.ts` if touching either file
+
 ### Auth Pattern
 - `lib/queries/auth.ts` — Cached `getAuthContext()` using React `cache()` deduplicates auth lookups per request. All dashboard pages and server actions should use this instead of manual `getUser()` + leader + alliance queries.
 - `lib/supabase/server.ts` — `createClient()` (anon, RLS-aware) and `createServiceClient()` (bypasses RLS)

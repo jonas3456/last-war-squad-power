@@ -90,6 +90,7 @@ export function DashboardTable({
               <TableHead className="text-right"><SortHeader field="squad3">S3</SortHeader></TableHead>
               <TableHead className="text-right"><SortHeader field="squad4">S4</SortHeader></TableHead>
               <TableHead className="text-right"><SortHeader field="total_power">Total</SortHeader></TableHead>
+              <TableHead className="text-right">Change</TableHead>
               <TableHead><SortHeader field="submitted_at">Submitted</SortHeader></TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
@@ -98,7 +99,7 @@ export function DashboardTable({
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground">
+                <TableCell colSpan={10} className="text-center text-muted-foreground">
                   {search ? "No players match your search" : "No players yet"}
                 </TableCell>
               </TableRow>
@@ -112,6 +113,21 @@ export function DashboardTable({
                   <TableCell className="text-right">{formatPower(player.squad4)}</TableCell>
                   <TableCell className="text-right font-semibold">
                     {formatPower(player.total_power)}
+                  </TableCell>
+                  <TableCell className="text-right text-sm">
+                    {player.total_power !== null && player.prev_total_power !== null && player.prev_total_power !== 0 ? (
+                      (() => {
+                        const pct = ((player.total_power - player.prev_total_power) / player.prev_total_power) * 100;
+                        const sign = pct >= 0 ? "+" : "";
+                        return (
+                          <span className={pct > 0 ? "text-green-500" : pct < 0 ? "text-destructive" : "text-muted-foreground"}>
+                            {sign}{pct.toFixed(1)}%
+                          </span>
+                        );
+                      })()
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {player.submitted_at

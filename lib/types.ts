@@ -51,4 +51,5 @@ export interface PlayerWithLatestEntry {
   squad4: number | null;
   total_power: number | null;
   submitted_at: string | null;
+  prev_total_power: number | null;
 }

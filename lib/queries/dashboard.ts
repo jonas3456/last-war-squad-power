@@ -8,14 +8,43 @@ export async function getDashboardData() {
 
   const supabase = await createClient();
 
-  const { data: players } = await supabase
+  const { data: latestPlayers } = await supabase
     .from("player_latest_power")
     .select("*")
     .eq("alliance_id", auth.allianceId)
     .order("name");
 
+  const players = (latestPlayers as Omit<PlayerWithLatestEntry, "prev_total_power">[]) ?? [];
+
+  // Fetch previous entry per player to compute % change
+  const playerIds = players.map((p) => p.id);
+  let prevTotalByPlayer: Record<string, number> = {};
+  if (playerIds.length > 0) {
+    const { data: entries } = await supabase
+      .from("power_entries")
+      .select("player_id, total_power, submitted_at")
+      .in("player_id", playerIds)
+      .order("submitted_at", { ascending: false });
+
+    if (entries) {
+      const seen = new Set<string>();
+      for (const entry of entries) {
+        if (seen.has(entry.player_id)) {
+          if (!(entry.player_id in prevTotalByPlayer)) {
+            prevTotalByPlayer[entry.player_id] = entry.total_power;
+          }
+        } else {
+          seen.add(entry.player_id);
+        }
+      }
+    }
+  }
+
   return {
-    players: (players as PlayerWithLatestEntry[]) ?? [],
+    players: players.map((p) => ({
+      ...p,
+      prev_total_power: prevTotalByPlayer[p.id] ?? null,
+    })) as PlayerWithLatestEntry[],
   };
 }
 
