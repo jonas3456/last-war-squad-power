@@ -20,10 +20,12 @@ Last War Squad Power Tracker — a Next.js App Router application for tracking h
 - `vercel --prod` — Deploy to Vercel
 
 ## Architecture
-
+    
 ### Entry Management
-- `lib/actions/entries.ts` — `leaderUpdateEntry` / `leaderDeleteEntry` server actions for the history page
+- `lib/actions/entries.ts` — `leaderUpdateEntry` / `leaderDeleteEntry` / `leaderAddEntry` server actions for the history page
 - `parsePower()` is duplicated in `entries.ts` (not only in `submissions.ts`) — consider consolidating into `lib/utils.ts` if touching either file
+- `power_entries` RLS INSERT policy exists for leaders — player submissions from `/submit/[token]` still use service role client to bypass RLS
+- `player_latest_power` view only exposes the most recent entry per player — fetching the previous entry requires a separate query on `power_entries`
 
 ### Auth Pattern
 - `lib/queries/auth.ts` — Cached `getAuthContext()` using React `cache()` deduplicates auth lookups per request. All dashboard pages and server actions should use this instead of manual `getUser()` + leader + alliance queries.
@@ -31,7 +33,7 @@ Last War Squad Power Tracker — a Next.js App Router application for tracking h
 - Service role client is only used where RLS cannot apply: signup/join (no leader row yet), unauthenticated submissions, unauthenticated player self-registration, admin password resets.
 
 ### Database
-- Migrations in `supabase/migrations/` (001–007). Run in order in Supabase SQL editor.
+- Single consolidated migration in `supabase/migrations/`. Applied automatically via `supabase db push` during build. New migrations use timestamp prefix format (`YYYYMMDDHHmmss_name.sql`).
 - `get_my_alliance_id()` — `security definer` function that breaks circular RLS references on the leaders table.
 - `player_latest_power` view with `security_invoker = on` for dashboard data.
 - Supabase linter may flag the view as "Security Definer" — this is a false positive; `security_invoker = on` is already set.
@@ -63,5 +65,10 @@ Last War Squad Power Tracker — a Next.js App Router application for tracking h
 
 - Hosted on Vercel, database on Supabase
 - `git push` to `main` triggers a production deployment — always ask the user before pushing
+- Supabase migrations run automatically during `npm run build` via `supabase db push`
 - Supabase Auth setting: "Confirm email" must be disabled (uses fake @internal.local emails)
-- Environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- Environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`
+- `SUPABASE_DB_URL` — Postgres connection string from Supabase Dashboard → Settings → Database → Connection string (URI). Used by `supabase db push` at build time.
+- `SUPABASE_DB_URL` must use the **session mode pooler** URL (`aws-0-*.pooler.supabase.com:5432`), not the direct connection — direct resolves to IPv6 which may not be routable.
+- `supabase migration repair --status applied <version> --db-url $SUPABASE_DB_URL` — marks a migration as applied without running it (for existing databases)
+- `vercel env pull --environment production /tmp/file` — temporarily pull prod env vars; use `printf` (not `echo`) when piping values into `vercel env add` to avoid trailing newlines
