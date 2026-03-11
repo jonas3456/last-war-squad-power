@@ -36,7 +36,6 @@ Last War Squad Power Tracker — a Next.js App Router application for tracking h
 - Single consolidated migration in `supabase/migrations/`. Applied automatically via `supabase db push` during build. New migrations use timestamp prefix format (`YYYYMMDDHHmmss_name.sql`).
 - `get_my_alliance_id()` — `security definer` function that breaks circular RLS references on the leaders table.
 - `player_latest_power` view with `security_invoker = on` for dashboard data.
-- Supabase linter may flag the view as "Security Definer" — this is a false positive; `security_invoker = on` is already set.
 - `compute_total_power` trigger auto-calculates total_power on power_entries.
 - Columns use `numeric` type (not bigint) to support decimal values.
 - Unique constraint on `(alliance_id, lower(name))` prevents duplicate player names. Postgres error code `23505` = unique violation.

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "npx supabase db push --db-url $SUPABASE_DB_URL && next build",
+    "build:local": "set -a && source .env.local && set +a && npm run build",
     "start": "next start",
     "lint": "next lint"
   },
