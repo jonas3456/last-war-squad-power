@@ -16,7 +16,8 @@ Last War Squad Power Tracker — a Next.js App Router application for tracking h
 ## Key Commands
 
 - `npm run dev` — Start dev server
-- `npx next build` — Production build
+- `npm run build:local` — Build locally (auto-loads `.env.local` for `SUPABASE_DB_URL`)
+- `npm run build` — Production build (used by Vercel; requires env vars in environment)
 - `vercel --prod` — Deploy to Vercel
 
 ## Architecture
@@ -37,6 +38,8 @@ Last War Squad Power Tracker — a Next.js App Router application for tracking h
 - `get_my_alliance_id()` — `security definer` function that breaks circular RLS references on the leaders table.
 - `player_latest_power` view with `security_invoker = on` for dashboard data.
 - `compute_total_power` trigger auto-calculates total_power on power_entries.
+- All PL/pgSQL functions must include `set search_path = public` to avoid Supabase "Function Search Path Mutable" security warnings.
+- When Supabase advisor flags a live DB object that's already correct in migrations, create a new migration to force re-apply — the initial migration won't re-run on existing DBs.
 - Columns use `numeric` type (not bigint) to support decimal values.
 - Unique constraint on `(alliance_id, lower(name))` prevents duplicate player names. Postgres error code `23505` = unique violation.
 

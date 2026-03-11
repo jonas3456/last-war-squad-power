@@ -52,18 +52,19 @@ To enable hCaptcha: add the site key above, then in Supabase Dashboard → Authe
 
 ### 3. Run database migrations
 
-In the Supabase SQL Editor, run the migration files in order:
+Add your Supabase database connection string to `.env.local`:
 
-1. `supabase/migrations/001_initial_schema.sql` — Tables, indexes, triggers, helper functions
-2. `supabase/migrations/002_rls_policies.sql` — Row Level Security policies
-3. `supabase/migrations/003_dashboard_view.sql` — Dashboard view
+```
+SUPABASE_DB_URL=postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres
+```
 
-For existing installations, also run these additional migrations:
+Use the **session mode pooler** URL from Supabase Dashboard → Settings → Database → Connection string (URI). Then run:
 
-1. `supabase/migrations/004_leaders_username.sql` — Username denormalization
-2. `supabase/migrations/005_alliance_leader_policies.sql` — Alliance/leader update policies
-3. `supabase/migrations/006_power_entries_update_delete.sql` — Entry edit/delete policies
-4. `supabase/migrations/007_unique_player_name.sql` — Unique player names per alliance (remove duplicates first)
+```bash
+npm run build:local
+```
+
+This applies all migrations automatically via `supabase db push` before building.
 
 ### 4. Configure Supabase Auth
 
@@ -81,11 +82,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### 6. Deploy to Vercel (optional)
 
-```bash
-vercel --prod
-```
-
-Set the same environment variables in your Vercel project settings.
+Set all environment variables in your Vercel project settings (including `SUPABASE_DB_URL`), then push to `main` — Vercel will run `npm run build` which applies migrations automatically.
 
 ## Tech Stack
 
@@ -119,7 +116,7 @@ components/
   register/            # Player self-registration form
   ui/                  # shadcn/ui primitives
 supabase/
-  migrations/          # SQL migration files (001-007)
+  migrations/          # SQL migration files (applied automatically on build)
 ```
 
 ## License
